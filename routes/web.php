@@ -11,6 +11,6 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::resource('tasks', 'Admin\TaskController')->only([
+    'index', 'store', 'destroy'
+]);
