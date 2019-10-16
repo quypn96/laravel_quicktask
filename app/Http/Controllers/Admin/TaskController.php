@@ -5,16 +5,19 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Model\Task;
 use App\Http\Requests\TaskRequest;
+use App\Repositories\Task\TaskRepository;
+use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
-    private $model = null;
+    private $taskRepository = null;
 
-    public function __construct(Task $model)
+    public function __construct(TaskRepository $taskRepository)
     {
-        $this->model = $model;
+        $this->middleware('auth');
+        $this->taskRepository = $taskRepository;
+        $this->authorizeResource($taskRepository->getModel(), 'tasks');
     }
 
     /**
@@ -22,9 +25,9 @@ class TaskController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $tasks = Task::orderBy('created_at', 'desc')->get();
+        $tasks = $this->taskRepository->getDataByUserCreated($request->user());
 
         return view('tasks', ['tasks' => $tasks]);
     }
@@ -47,7 +50,7 @@ class TaskController extends Controller
      */
     public function store(TaskRequest $request)
     {
-        $this->model->create($request->all());
+        $this->taskRepository->createByUser($request->user(), $request->all());
 
         return redirect()->route('tasks.index');
     }
@@ -95,8 +98,7 @@ class TaskController extends Controller
     public function destroy($id)
     {
         try {
-            $task = Task::findOrFail($id);
-            $task->delete();
+            $this->taskRepository->delete($id);
 
             return redirect()->route('tasks.index');
 
