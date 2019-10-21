@@ -17,7 +17,6 @@ class TaskController extends Controller
     {
         $this->middleware('auth');
         $this->taskRepository = $taskRepository;
-        $this->authorizeResource($taskRepository->getModel(), 'tasks');
     }
 
     /**
@@ -98,7 +97,9 @@ class TaskController extends Controller
     public function destroy($id)
     {
         try {
-            $this->taskRepository->delete($id);
+            if (Auth::user()->can('delete', $this->taskRepository->find($id))) {
+                $this->taskRepository->delete($id);
+            }
 
             return redirect()->route('tasks.index');
 
